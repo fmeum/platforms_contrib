@@ -4,6 +4,8 @@ platforms_contrib provides standardized constraints and flags for expressive Baz
 It currently covers:
 
 * [libc flavor, version and preference](#libc-flavor-and-version-linux-only) (currently Linux only)
+* [C runtime preference](#c-runtime-preference-windows-only) (Windows only)
+* [C++ runtime availability](#c-runtime-availability)
 * [CPU features and model](#cpu-features-and-model-x86-64-only) (currently x86-64 only)
 
 We plan to work on support for non-Linux OSes and ARM CPUs next.
@@ -259,6 +261,31 @@ Future versions may add options, e.g. for other libcs or with conditions on the 
 The default ranking will stay `glibc,musl`, except that flavors added in the future may be appended to it, which only affects platforms that declare them as available.
 An option that requires more than a flavor and possibly fully static linking, e.g. dynamic linking, won't match any existing setting or flavor value of `:preferred` and will leave `flavor` and `requires_fully_static` of `PreferredLibcInfo` as well as the corresponding Make variables unset.
 Code written before such an option is added then fails instead of ignoring the requirement, as long as it reads the fields directly instead of via `getattr` with a default.
+
+## C runtime preference (Windows only)
+
+Windows toolchains choose between the Universal C Runtime, the legacy `msvcrt.dll` and a statically linked UCRT.
+Since `/MT` and `/MD` affect compilation as well as linking, the choice has to be the same for the entire build, including other languages.
+To that end, the list flag `@platforms_contrib//os/windows/crt:preference` ranks the following options and defaults to the empty list, which leaves the choice to the toolchain:
+
+* `ucrt` and `msvcrt`: link the DLL of the given flavor (`/MD`).
+* `static-ucrt`: link the CRT statically into every binary and DLL (`/MT`).
+
+Toolchains and rules follow the preference via `:ucrt_preferred`, `:msvcrt_preferred`, `:requires_static`, `:requires_dynamic`, `:unset` and the `PreferredWindowsCrtInfo` provider of `:preferred` (from `@platforms_contrib//os/windows/crt:crt.bzl`).
+
+## C++ runtime availability
+
+A platform can declare which C++ runtimes it provides, so that a binary doesn't have to bring its own:
+
+```text
+@platforms_contrib//os/linux/cxx_runtime/libstdcxx:at_least_<GCC major>_available
+@platforms_contrib//os/linux/cxx_runtime/libcxx:at_least_<LLVM major>_available
+@platforms_contrib//os/windows/cxx_runtime/msvcp:at_least_14.<minor>_available
+```
+
+Use `libstdcxx_version_constraints`, `libcxx_version_constraints` and `msvcp_version_constraints` from the `.bzl` file in the respective package to get the constraints for a version and all lower versions.
+These constraints describe the platform only.
+Which C++ runtime is linked is chosen via `@rules_cc//cc/cxx_runtime:preference`.
 
 ## CPU features and model (x86-64 only)
 

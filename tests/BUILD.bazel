@@ -1,8 +1,10 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//cpu/x86_64:x86_64_private.bzl", "X86_64_LLVM_FEATURES")
+load(":cxx_runtime_constraints_test.bzl", "cxx_runtime_constraints_test_suite")
 load(":feature_mapping_test.bzl", "feature_mapping_test_suite")
 load(":libc_constraints_test.bzl", "libc_constraints_test_suite")
 load(":libc_preference_test.bzl", "libc_preference_test_suite")
+load(":windows_crt_preference_test.bzl", "windows_crt_preference_test_suite")
 load(":x86_64_feature_test.bzl", "x86_64_feature_test_suite")
 load(":x86_64_model_test.bzl", "x86_64_model_test_suite")
 
@@ -23,6 +25,10 @@ feature_mapping_test_suite(name = "feature_mapping_tests")
 libc_constraints_test_suite(name = "libc_constraints_tests")
 
 libc_preference_test_suite(name = "libc_preference")
+
+cxx_runtime_constraints_test_suite(name = "cxx_runtime_constraints")
+
+windows_crt_preference_test_suite(name = "windows_crt_preference")
 
 x86_64_feature_test_suite(name = "x86_64_feature")
 

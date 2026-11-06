@@ -1,0 +1,32 @@
+# Constraints describing which version of libstdc++ a platform provides at runtime, identified by
+# the GCC major version.
+#
+# Usage:
+#
+#   * Defining a `platform`: append `libstdcxx_version_constraints("13")` (from `libstdcxx.bzl`) to
+#     the `platform`'s `constraint_value`s.
+#
+#   * Constraining a toolchain or usage in `select()`: list one of the
+#     `:at_least_<version>_available` values in `exec_compatible_with` / `target_compatible_with` or
+#     as a `select()` key.
+#
+# These constraints track availability, not which C++ runtime is actually linked. Use
+# `@rules_cc//cc/cxx_runtime:preference` to choose it.
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//private:runtime_version_constraints.bzl", "runtime_version_constraints")
+load(":libstdcxx_private.bzl", "LIBSTDCXX_VERSIONS")
+
+bzl_library(
+    name = "libstdcxx_bzl",
+    srcs = [
+        "libstdcxx.bzl",
+        "libstdcxx_private.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+runtime_version_constraints(
+    os_constraint = "@platforms//os:linux",
+    versions = LIBSTDCXX_VERSIONS,
+)

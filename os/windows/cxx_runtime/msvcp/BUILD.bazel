@@ -1,0 +1,32 @@
+# Constraints describing which version of the Visual C++ Redistributable (msvcp140.dll and
+# vcruntime140.dll) a platform provides at runtime.
+#
+# Usage:
+#
+#   * Defining a `platform`: append `msvcp_version_constraints("14.40")` (from `msvcp.bzl`) to
+#     the `platform`'s `constraint_value`s.
+#
+#   * Constraining a toolchain or usage in `select()`: list one of the
+#     `:at_least_<version>_available` values in `exec_compatible_with` / `target_compatible_with` or
+#     as a `select()` key.
+#
+# These constraints track availability, not which C++ runtime is actually linked. Use
+# `@rules_cc//cc/cxx_runtime:preference` to choose it.
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//private:runtime_version_constraints.bzl", "runtime_version_constraints")
+load(":msvcp_private.bzl", "MSVCP_VERSIONS")
+
+bzl_library(
+    name = "msvcp_bzl",
+    srcs = [
+        "msvcp.bzl",
+        "msvcp_private.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+runtime_version_constraints(
+    os_constraint = "@platforms//os:windows",
+    versions = MSVCP_VERSIONS,
+)
