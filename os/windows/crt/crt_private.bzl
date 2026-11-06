@@ -11,8 +11,10 @@ CRT_FLAVORS = [
 
 _STATIC_PREFIX = "static-"
 
+NO_CRT = "none"
+
 # msvcrt.dll has no static counterpart.
-CRT_PREFERENCES = CRT_FLAVORS + [_STATIC_PREFIX + "ucrt"]
+CRT_PREFERENCES = CRT_FLAVORS + [_STATIC_PREFIX + "ucrt", NO_CRT]
 
 _CrtPreferenceInfo = provider(
     doc = "The ranking of CRT options set via //os/windows/crt:preference.",
@@ -49,6 +51,8 @@ def _resolve(ctx):
     # Every Windows version with vendor support ships both DLLs and static linking doesn't depend
     # on the platform, so all options are viable as long as there are no availability constraints.
     preference = preferences[0]
+    if preference == NO_CRT:
+        return PreferredWindowsCrtInfo(status = "resolved", flavor = NO_CRT, requires_static = None)
     return PreferredWindowsCrtInfo(
         status = "resolved",
         flavor = preference.removeprefix(_STATIC_PREFIX),

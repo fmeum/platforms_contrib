@@ -8,8 +8,8 @@
 #     `--@platforms_contrib//os/linux/libc:preference=glibc,static-musl`.
 #
 #   * Following the choice in a toolchain or rule: use `:glibc_preferred`, `:musl_preferred`,
-#     `:requires_fully_static`, `:allows_dynamic` and `:unresolved` as `select()` keys or in
-#     `toolchain.target_settings`, read the `PreferredLibcInfo` provider (from `libc.bzl`) of
+#     `:none_preferred`, `:requires_fully_static`, `:allows_dynamic` and `:unresolved` as `select()`
+#     keys or in `toolchain.target_settings`, read the `PreferredLibcInfo` provider (from `libc.bzl`) of
 #     `:preferred` in a rule implementation, or add `:preferred` to the `toolchains` attribute of a
 #     target and use the `PREFERRED_LIBC`, `PREFERRED_LIBC_REQUIRES_FULLY_STATIC` and
 #     `PREFERRED_LIBC_STATUS` Make variables.
@@ -20,7 +20,7 @@
 # `@rules_cc//cc/libc` instead.
 
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load(":libc_private.bzl", "LIBC_FLAVORS", "libc_preference_flag", "preferred_libc", "validate_preferred_libc")
+load(":libc_private.bzl", "LIBC_FLAVORS", "NO_LIBC", "libc_preference_flag", "preferred_libc", "validate_preferred_libc")
 
 bzl_library(
     name = "libc_bzl",
@@ -29,8 +29,9 @@ bzl_library(
 )
 
 # A ranking of the libc options: "glibc" and "musl" are viable if the target platform declares the
-# flavor as available, "static-glibc" and "static-musl" on every Linux platform. The preferred
-# option is the first viable one. Only the "static-" options require linking fully statically.
+# flavor as available, "static-glibc", "static-musl" and "none" (no libc) on every Linux platform.
+# The preferred option is the first viable one. The "static-" options and "none" require linking
+# fully statically.
 libc_preference_flag(
     name = "preference",
     build_setting_default = [
@@ -49,7 +50,8 @@ libc_preference_flag(
 # Provides the preference resolved against the target platform as PreferredLibcInfo and Make
 # variables:
 #
-#   * PREFERRED_LIBC: the preferred flavor, currently "glibc" or "musl", or empty if not resolved.
+#   * PREFERRED_LIBC: the preferred flavor, currently "glibc", "musl" or "none", or empty if not
+#     resolved.
 #   * PREFERRED_LIBC_REQUIRES_FULLY_STATIC: "1" if binaries have to be linked fully statically,
 #     otherwise empty.
 #   * PREFERRED_LIBC_STATUS: "resolved", "unresolved" (Linux platforms without a viable option) or
@@ -75,7 +77,7 @@ preferred_libc(
         flag_values = {":preferred": flavor},
         visibility = ["//visibility:public"],
     )
-    for flavor in LIBC_FLAVORS
+    for flavor in LIBC_FLAVORS + [NO_LIBC]
 ]
 
 # Matches if binaries have to be linked fully statically. Toolchains should then link all binaries

@@ -151,6 +151,10 @@ To that end, the list flag `@platforms_contrib//os/linux/libc:preference` ranks 
 * `static-musl` and `static-glibc`: target the flavor and link all binaries fully statically, which is viable on every Linux platform.
   Depending on the features they use and the configuration of the machine, fully static glibc binaries may still load shared objects of the exact glibc version used for linking at runtime, e.g. for NSS sources other than `files` and `dns` (as of glibc 2.34), iconv and `dlopen`.
   For self-contained binaries, avoid these features or ship the matching shared objects.
+* `none`: don't use a libc at all, which is viable on every Linux platform.
+  Code is compiled as freestanding, without libc headers, and linked without a libc, startup files and a C++ runtime, so it has to provide its own `_start` and make its own system calls.
+  Since the dynamic loader is part of the libc, executables are fully static.
+  Shared libraries can still be linked, e.g. for a host that loads them with its own loader.
 
 The preferred option is the first viable one.
 A platform without libc constraints doesn't declare any libc as available, so only the fully static options are viable on it.
@@ -166,6 +170,9 @@ Typical rankings are:
 | Build portable, fully static binaries for all Linux platforms | `static-musl` |
 | Use the platform's glibc, otherwise build fully static binaries (e.g. for `scratch` or Alpine images) | `glibc,static-musl` |
 | The same for code that requires glibc | `glibc,static-glibc` |
+| Build freestanding code that runs directly on the Linux kernel | `none` |
+
+Platforms that don't run Linux, such as `@platforms//os:none`, aren't subject to the ranking, even if they have no libc either.
 
 On Bazel 9 and later, exec transitions reset the ranking to the default, so that the ranking for the target platform doesn't affect tools.
 On Bazel 7 and 8, the ranking also applies to exec configurations by default.
@@ -175,9 +182,9 @@ Don't set the ranking via the `flags` of a platform: it would override the ranki
 
 Toolchains and rules that choose a libc should follow the preference instead of making their own choice, using the following targets in `@platforms_contrib//os/linux/libc`:
 
-* `:glibc_preferred` and `:musl_preferred` match the preferred flavor.
+* `:glibc_preferred`, `:musl_preferred` and `:none_preferred` match the preferred flavor.
   To combine the flavor with other conditions in a single `config_setting`, e.g. so that it specializes other settings in a `select()`, use `:preferred` as a key of `flag_values` with the flavor as the value.
-* `:requires_fully_static` matches if binaries have to be linked fully statically.
+* `:requires_fully_static` matches if binaries have to be linked fully statically, which includes `none`.
   Toolchains should then link all binaries fully statically, e.g. by enabling the `fully_static_link` feature of a C++ toolchain, and fail for binaries that can't be, e.g. because they depend on shared libraries.
   Otherwise, individual binaries can still be linked fully statically, e.g. via `features = ["fully_static_link"]`.
 * `:allows_dynamic` matches if the preference resolved and binaries don't have to be linked fully statically.
@@ -270,8 +277,10 @@ To that end, the list flag `@platforms_contrib//os/windows/crt:preference` ranks
 
 * `ucrt` and `msvcrt`: link the DLL of the given flavor (`/MD`).
 * `static-ucrt`: link the CRT statically into every binary and DLL (`/MT`).
+* `none`: don't use a CRT at all, e.g. for drivers and other code with its own entry point.
+  Unlike on Linux, this doesn't restrict dynamic linking since the loader of Windows isn't part of the CRT.
 
-Toolchains and rules follow the preference via `:ucrt_preferred`, `:msvcrt_preferred`, `:requires_static`, `:requires_dynamic`, `:unset` and the `PreferredWindowsCrtInfo` provider of `:preferred` (from `@platforms_contrib//os/windows/crt:crt.bzl`).
+Toolchains and rules follow the preference via `:ucrt_preferred`, `:msvcrt_preferred`, `:none_preferred`, `:requires_static`, `:requires_dynamic`, `:unset` and the `PreferredWindowsCrtInfo` provider of `:preferred` (from `@platforms_contrib//os/windows/crt:crt.bzl`).
 
 ## C++ runtime availability
 

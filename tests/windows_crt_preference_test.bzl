@@ -49,6 +49,7 @@ def windows_crt_preference_test_suite(name):
         selected_flavor = select({
             "//os/windows/crt:ucrt_preferred": "ucrt",
             "//os/windows/crt:msvcrt_preferred": "msvcrt",
+            "//os/windows/crt:none_preferred": "none",
             "//conditions:default": "",
         }),
         selected_linkage = select({
@@ -72,6 +73,7 @@ def windows_crt_preference_test_suite(name):
         ("ucrt", "windows", ["ucrt"], _expect("resolved", "ucrt", False, ["ucrt", "dynamic"])),
         ("msvcrt", "windows", ["msvcrt", "ucrt"], _expect("resolved", "msvcrt", False, ["msvcrt", "dynamic"])),
         ("static_ucrt", "windows", ["static-ucrt", "ucrt"], _expect("resolved", "ucrt", True, ["ucrt", "static"])),
+        ("none", "windows", ["none", "ucrt"], _expect("resolved", "none", None, ["none", ""])),
         ("not_windows", "linux", ["static-ucrt"], _expect("not_applicable", None, None, ["", ""])),
     ]:
         analysis_test(
@@ -86,7 +88,7 @@ def windows_crt_preference_test_suite(name):
     analysis_test(
         name = name + "_unsupported_test",
         target = "//os/windows/crt:preferred",
-        impl = _expect_failure('Unsupported CRT preference "static-msvcrt" in --{}, expected one of: "ucrt", "msvcrt", "static-ucrt"'.format(_PREFERENCE)),
+        impl = _expect_failure('Unsupported CRT preference "static-msvcrt" in --{}, expected one of: "ucrt", "msvcrt", "static-ucrt", "none"'.format(_PREFERENCE)),
         expect_failure = True,
         config_settings = {_PREFERENCE: ["static-msvcrt"]},
     )

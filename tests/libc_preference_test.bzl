@@ -169,6 +169,7 @@ def libc_preference_test_suite(name):
         selected_flavor = select({
             "//os/linux/libc:glibc_preferred": "glibc",
             "//os/linux/libc:musl_preferred": "musl",
+            "//os/linux/libc:none_preferred": "none",
             "//os/linux/libc:unresolved": "unresolved",
             "//conditions:default": "",
         }),
@@ -216,6 +217,10 @@ def libc_preference_test_suite(name):
         # Without libc constraints, only fully static options are viable.
         ("no_libc_static_musl", "linux", ["glibc", "musl", "static-musl"], "musl", True),
         ("no_libc_static_glibc", "linux", ["glibc", "static-glibc", "static-musl"], "glibc", True),
+        ("none_on_glibc", "glibc", ["none"], "none", True),
+        ("none_on_platform_without_libc", "linux", ["none"], "none", True),
+        ("none_as_fallback", "linux", ["glibc", "musl", "none"], "none", True),
+        ("none_only_if_ranked_first", "glibc", ["glibc", "none"], "glibc", False),
     ]:
         analysis_test(
             name = "{}_{}_test".format(name, test),
@@ -364,7 +369,7 @@ def libc_preference_test_suite(name):
     analysis_test(
         name = name + "_unsupported_test",
         target = "//os/linux/libc:preferred",
-        impl = _expect_failure('Unsupported libc preference "bionic" in --{}, expected one of: "glibc", "musl", "static-glibc", "static-musl"'.format(_PREFERENCE)),
+        impl = _expect_failure('Unsupported libc preference "bionic" in --{}, expected one of: "glibc", "musl", "static-glibc", "static-musl", "none"'.format(_PREFERENCE)),
         expect_failure = True,
         config_settings = _platform_settings(name, "glibc", ["bionic", "glibc"]),
     )

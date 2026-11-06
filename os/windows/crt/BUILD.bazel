@@ -7,15 +7,15 @@
 #     leaves the choice to the toolchain.
 #
 #   * Following the choice in a toolchain or rule: use `:ucrt_preferred`, `:msvcrt_preferred`,
-#     `:requires_static`, `:requires_dynamic` and `:unset` as `select()` keys or in
-#     `toolchain.target_settings` or read the `PreferredWindowsCrtInfo` provider (from `crt.bzl`) of
-#     `:preferred` in a rule implementation.
+#     `:none_preferred`, `:requires_static`, `:requires_dynamic` and `:unset` as `select()` keys or
+#     in `toolchain.target_settings` or read the `PreferredWindowsCrtInfo` provider (from `crt.bzl`)
+#     of `:preferred` in a rule implementation.
 #
 # To make code depend on the CRT that it's actually compiled against, use the `config_setting`s in
 # `@rules_cc//cc/libc` instead.
 
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load(":crt_private.bzl", "CRT_FLAVORS", "crt_preference_flag", "preferred_windows_crt")
+load(":crt_private.bzl", "CRT_FLAVORS", "NO_CRT", "crt_preference_flag", "preferred_windows_crt")
 
 bzl_library(
     name = "crt_bzl",
@@ -48,7 +48,7 @@ preferred_windows_crt(
         flag_values = {":preferred": flavor},
         visibility = ["//visibility:public"],
     )
-    for flavor in CRT_FLAVORS
+    for flavor in CRT_FLAVORS + [NO_CRT]
 ]
 
 # Matches if the CRT has to be linked statically (/MT), which affects compilation as well as linking.

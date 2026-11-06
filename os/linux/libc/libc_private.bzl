@@ -11,10 +11,12 @@ LIBC_FLAVORS = [
 
 _FULLY_STATIC_PREFIX = "static-"
 
-# The values of //os/linux/libc:preference: a flavor that the platform has to make available, or a
-# flavor to link fully statically, which doesn't depend on the platform's libc. Options can be added,
-# but existing ones must keep their meaning, see "Compatibility" in the README.
-LIBC_PREFERENCES = LIBC_FLAVORS + [_FULLY_STATIC_PREFIX + flavor for flavor in LIBC_FLAVORS]
+NO_LIBC = "none"
+
+# The values of //os/linux/libc:preference: a flavor that the platform has to make available, a
+# flavor to link fully statically, which doesn't depend on the platform's libc, or no libc at all.
+# Options can be added, but existing ones must keep their meaning, see "Compatibility" in the README.
+LIBC_PREFERENCES = LIBC_FLAVORS + [_FULLY_STATIC_PREFIX + flavor for flavor in LIBC_FLAVORS] + [NO_LIBC]
 
 _LibcPreferenceInfo = provider(
     doc = "The ranking of libc options set via //os/linux/libc:preference.",
@@ -73,6 +75,9 @@ def _resolve(ctx):
         if _has(ctx, constraint_value)
     ]
     for preference in preferences:
+        # Without a libc, there is no dynamic loader either.
+        if preference == NO_LIBC:
+            return _resolved(NO_LIBC, requires_fully_static = True)
         # Fully static binaries don't depend on the platform's libc.
         if preference.startswith(_FULLY_STATIC_PREFIX):
             return _resolved(preference.removeprefix(_FULLY_STATIC_PREFIX), requires_fully_static = True)
